@@ -1,0 +1,56 @@
+<html>
+	<head>
+		<title> Grizzlr Typing </title>
+		<style>
+			#current_text{
+				height: 650px;
+				width: 900px;
+				border: 1px solid #000000;
+				overflow: auto;
+			}
+
+			#title{
+				margin-left : 310px;
+			}
+
+			#contents{
+				margin-left: 22%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="contents">
+			<h1 id="title">Grizzlr Typing Pad</h1>
+			<div id="current_text" contenteditable="true">Type Here</div>
+		</div>
+	</body>
+	
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-2.1.1.js"></script>
+	
+	<script type="text/javascript">
+		var socket = io();
+		var current_text_value;
+
+		document.getElementById('current_text').addEventListener("input", function(){
+			current_text_value = document.getElementById('current_text').innerHTML;
+			socket.emit('new_user_text', current_text_value)
+		}, false);
+
+		socket.on('new_client_update', function(new_data){
+			document.getElementById('current_text').innerHTML = new_data;
+		});
+
+		socket.on('client_update_text', function(new_text){
+			document.getElementById('current_text').innerHTML = new_text;
+		});
+
+		socket.on('send_data', function(){
+			current_text_value = document.getElementById('current_text').innerHTML;
+			socket.emit('send_update', current_text_value);
+		})
+		
+
+	</script>
+</html>
