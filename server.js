@@ -1,57 +1,36 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var currentidnumber = 0;
-var noteids = [];
-var notes = [];
-var clients = [];
+
+var email_array = [];
+var hour_array = [];
+
 
 app.get('/', function(req, res){
 	res.sendfile('index.html');
 });
 
 io.on('connection', function(socket){
-	console.log('connection');
-	clients.push(socket.id);
-	io.sockets.emit('new_count', clients.length);
+	
+	console.log('connection')
 
-	if(clients.length > 1){
-		socket.broadcast.to(clients[clients.length - 2]).emit('send_data');
-	}
+	socket.on('new_client_data', function(data){
 
-	socket.on('send_update', function(){
-		socket.broadcast.to(clients[clients.length - 1]).emit('new_client_update', notes);
-	});
+		if(data.input_email_FC != "adminkappa@cranbrook.edu"){
+			if(email_array.indexOf(data.input_email_FC) != -1){
+				console.log('invalid (already exists)');
+				socket.emit('fail_exising');
 
-	socket.on('broadcast_request', function(){
-		var currentidvalue = "id_" + currentidnumber;
-		notes[currentidnumber] = "New Note";
-		io.sockets.emit('broadcast_completion', currentidvalue);
-		currentidnumber++;
-	});
+			} else {
 
-	socket.on('focus_confirmation', function(id){
-		console.log(id + " has been focused by " + socket.id);
-		socket.broadcast.emit('blur_request', id);
-	});
-
-	socket.on('new_client_text', function(data){
-		var newValue = data.clientValue;
-		var editId = data.elementid;
-		var trueId = editId.replace('id_', '');
-		notes[trueId] = data.clientValue;
-		socket.broadcast.emit('client_update', {editValue: newValue, editID: editId});
-	});
-
-	socket.on('blur_confirmation', function(id){
-		console.log(id + "has been blurred by " + socket.id);
-		socket.broadcast.emit('focus_request', id);
-	});
-
-	socket.on('disconnect', function(){
-		var remove_value = clients.indexOf(socket.id);
-		clients.splice(remove_value, 1);
-		io.sockets.emit('new_count', clients.length);
+				email_array.push(data.input_email_FC);
+				hour_array.push(data.input_hour_FC);
+				socket.emit('success');
+			}
+		} else { 
+			console.log('admin access');
+			socket.emit('admin_confirm', {email_array_FS: email_array, hour_array_FS: hour_array});
+		}
 	});
 });
 

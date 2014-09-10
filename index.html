@@ -1,50 +1,69 @@
 <html>
 	<head>
-		<title> Grizzlr Notes </title>
+		<title> Register </title>
 		<style>
-			#note-list{
-				width: 900px;
-				height: 800px;
+			#input_id{
+				width: 250px;
+				margin-left:15px;
+			}
+
+			#elements{
+				margin-left: 36%;
+				margin-top: 5%;
+			}
+
+			#instructions{
+				width: 400px;
+				font-size: 10;
+				text-align: center;
+				color: #867970;
+			}
+
+			#bottom_info{
+				font-size: 16;
+				margin-left: 38%;
+				position: absolute;
+				bottom: 0px;
+			}
+
+			#admin{
+				display: none;
 				border: 1px solid #000000;
+				width: 700px;
+				height: 500px;
 				overflow: auto;
-				list-style-position: inside;
 			}
 
-
-			#add_button{
-				border: 1px solid #000000;
-				cursor: pointer;
-				font-family:Times New Roman;
-				font-size: 18px;
-				padding: 9px 280px;
-			}
-
-			#contents{
-				margin-left: 20%;
-			}
-
-			#counter{
-				font-family:Times New Roman;
-				font-size 20px;
-				font-weight: bold;
-				padding: 12px 60px;
-			}
-
-			#title{
-				margin-left: 350px;
-				text-decoration: underline;
-			}
 		</style>
 	</head>
 
 	<body>
-		<div id="contents">
-			<h1 id="title">Grizzlr Note Pad</h1>
-			<input type="button" id="add_button" style="float:left" value="New Entry">
-			<div style="float:left" id="counter">Current Users: 1</div> 
-			<ul id="note-list" style="clear:left"><ul>
+		<div id="elements">
+			<img id="logo" src="http://www.miprepzone.com/images/schoollogos/Cranbrook.jpg">
+			<div> </div>
+			<input type="text" id="input_id" placeholder="Cranbrook Email">
+			<select id="select_hour">
+				<option>1</option>
+				<option>2</option>
+				<option>3</option>
+				<option>4</option>
+				<option>5</option>
+				<option>6</option>
+				<option>7</option>
+				<option>8</option>
+				<option selected="selected">None</option>
+			</select>
+			<input type="button" id="submit_data" value="Submit">
+			<div> </div>
+			<div id="instructions"> Please enter your Cranbrook email address along with your free period. <br/> If you have multiple free periods, choose the one you feel most comfortable working in.</div>
+
+			<div id="admin"></div>
 
 		</div>
+
+		<div id="bottom_info">Coded with &#9829 by Michael Bian for the Class of 2017</div>
+
+
 	</body>
 	
 	<script src="/socket.io/socket.io.js"></script>
@@ -52,65 +71,41 @@
 	
 	<script type="text/javascript">
 		var socket = io();
-		
-		document.getElementById('add_button').addEventListener('click', function(){
-			socket.emit('broadcast_request');
-		}, false);
+		document.getElementById('submit_data').addEventListener('click', function(){
 
-		socket.on('send_data',function(){
-			socket.emit('send_update');
+			var input_email = document.getElementById('input_id').value;
+			var select_element = document.getElementById('select_hour');
+			var selected_hour = select_element.options[select_element.selectedIndex].text;
+
+			if ( input_email.indexOf("@cranbrook.edu" ) > -1){
+				socket.emit('new_client_data', {input_email_FC: input_email, input_hour_FC: selected_hour});
+			
+			} else {
+
+				alert('Please enter your Cranbrook email. Thanks!');
+			}
+
 		});
 
-		socket.on('new_client_update', function(array){
-			if(array.length > 0){
-				var currentTest = 0;
-				while(currentTest < array.length){
-					var currentValue = array[currentTest];
-					var currentIDvalue = "id_" + currentTest;
-					var inputList = "<li contenteditable='true' id='" + currentIDvalue + "'>" + array[currentTest] + "</li>";
-					$('#note-list').append(inputList);
-					currentTest++;
-				}
+		socket.on('fail_exising', function(){
+			alert('You have already submitted your information. Thanks!');
+		});
+
+		socket.on('success', function(){
+			alert('Thanks for helping!');
+		});
+
+
+		socket.on('admin_confirm', function(data){
+			var array_length = data.email_array_FS.length;
+			var currentTest = 0;
+			$('#admin').css("display", "block");
+			while (currentTest < array_length){
+		
+				$('#admin').append(data.email_array_FS[currentTest] + ": " + data.hour_array_FS[currentTest] + "</br>");
+				currentTest++;
 			}
 		});
-
-		socket.on('broadcast_completion', function(id){
-			var exampleList = "<li contenteditable='true' id='" + id + "'>New Note</li>";
-			$('#note-list').append(exampleList);
-
-			document.getElementById(id).addEventListener("focus", function(event){
-				socket.emit('focus_confirmation', id);
-			});
-
-			document.getElementById(id).addEventListener("input", function(){
-				var newTextValue = document.getElementById(id).innerHTML;
-				socket.emit('new_client_text', {clientValue: newTextValue, elementid: id});
-			});
-
-			document.getElementById(id).addEventListener("blur", function(){
-				socket.emit('blur_confirmation', id);
-			})
-		});
-
-		socket.on('blur_request', function(id){
-			console.log('blur request recieved');
-			$('#'+id).attr('contenteditable', false);
-			document.getElementById(id).style.border = "1px solid red";
-		});
-
-		socket.on('client_update', function(data){
-			document.getElementById(data.editID).innerHTML = data.editValue;
-		});
-
-		socket.on('focus_request', function(id){
-			console.log('focs request recieved');
-			$('#'+id).attr('contenteditable', true);
-			document.getElementById(id).style.border = "none";
-		});
-
-		socket.on('new_count', function(count){
-			document.getElementById('counter').innerHTML = "Current Users: " + count;
-		})
-
 	</script>
+
 </html>
